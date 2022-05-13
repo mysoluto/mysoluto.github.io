@@ -1,0 +1,22 @@
+{
+  "name": "mysoluto.github.io",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mysoluto/mysoluto.github.io.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mysoluto/mysoluto.github.io/issues"
+  },
+  "homepage": "https://github.com/mysoluto/mysoluto.github.io#readme",
+  "dependencies": {
+    "vue": "^3.2.33"
+  }
+}
