@@ -1,1 +1,18 @@
-node_modules
+node_modules/
+
+# log
+/logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# Mac OSX
+.DS_Store
+
+# Vim swap files
+*.swp
+
+# Editor
+.vscode
