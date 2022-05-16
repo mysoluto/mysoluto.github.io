@@ -1,0 +1,23 @@
+html, body {
+  padding: 0;
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  color: #757575;
+}
+
+:root {
+  scroll-behavior: smooth;
+}
+
+h1 .header-anchor,
+h2 .header-anchor,
+h3 .header-anchor,
+h4 .header-anchor,
+h5 .header-anchor,
+h6 .header-anchor {
+  display: none;
+}
+
+h1, h2 {
+  color: rgb(66, 66, 66);
+}

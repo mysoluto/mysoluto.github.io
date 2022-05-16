@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vitepress dev pages",
+    "build": "vitepress build pages"
   },
   "repository": {
     "type": "git",
@@ -18,5 +20,10 @@
   "homepage": "https://github.com/mysoluto/mysoluto.github.io#readme",
   "dependencies": {
     "vue": "^3.2.33"
+  },
+  "devDependencies": {
+    "@tsconfig/recommended": "^1.0.1",
+    "@vitejs/plugin-vue": "^2.3.3",
+    "vite": "^2.9.9"
   }
 }
