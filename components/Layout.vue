@@ -27,6 +27,6 @@
   border: 1px solid #eee;
   border-radius: 8px;
   margin: 24px 10%;
-  padding: 20px 40px 40px;
+  padding: 30px 40px 40px;
 }
 </style>
