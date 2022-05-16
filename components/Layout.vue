@@ -10,10 +10,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, defineAsyncComponent } from 'vue'
-import { useRoute, useData } from 'vitepress'
-
-console.log(useData(), useRoute())
+// import { ref, computed, watch, defineAsyncComponent } from 'vue'
+// import { useRoute, useData } from 'vitepress'
 </script>
 
 <style>
@@ -29,6 +27,6 @@ console.log(useData(), useRoute())
   border: 1px solid #eee;
   border-radius: 8px;
   margin: 24px 10%;
-  padding: 40px;
+  padding: 20px 40px 40px;
 }
 </style>

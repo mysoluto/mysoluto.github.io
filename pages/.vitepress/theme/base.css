@@ -21,3 +21,25 @@ h6 .header-anchor {
 h1, h2 {
   color: rgb(66, 66, 66);
 }
+
+img {
+  max-width: 100%;
+  object-fit: cover;
+}
+
+pre {
+  background: rgb(9, 3, 0);
+  /* color: rgb(253, 237, 2); */
+  color: rgb(1, 162, 82);
+  /* color: rgb(205, 171, 83); */
+  padding: 16px;
+  border-radius: 5px;
+  box-shadow: rgba(0, 0, 0, 0.55) 0px 20px 68px 0px;
+  font-size: 16px;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+pre span {
+  word-break: break-word;
+}
