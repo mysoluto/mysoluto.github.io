@@ -29,4 +29,11 @@
   margin: 24px 10%;
   padding: 30px 40px 40px;
 }
+
+@media screen and (max-width: 480px) {
+  .page-main {
+    padding: 16px;
+    margin: 20px;
+  }
+}
 </style>
