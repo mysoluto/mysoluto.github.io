@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>日常开发遇到的问题 | soluto</title>
+    <meta name="description" content="A VitePress site">
+    <link rel="stylesheet" href="/assets/style.b83f43f5.css">
+    <link rel="modulepreload" href="/assets/app.adfffae8.js">
+    <link rel="modulepreload" href="/assets/probolem.md.95b5e4c1.lean.js">
+    
+    <meta name="twitter:title" content="日常开发遇到的问题 | soluto">
+  <meta property="og:title" content="日常开发遇到的问题 | soluto">
+  </head>
+  <body>
+    <div id="app"><div class="page"><header class="page-header"><h1>M.X</h1></header><main class="page-main"><div style="position:relative;"><div><h2 id="解决vue-cli-serve本地运行不正常" tabindex="-1">解决vue-cli serve本地运行不正常 <a class="header-anchor" href="#解决vue-cli-serve本地运行不正常" aria-hidden="true">#</a></h2><p>表现：执行 vue-cli-service serve ./src/main.ts 之后，本地spa项目正常启动,访问页面的时候，页面一直没办法正常呈现，查看js资源请求，发现只有一个chunk-vendors文件，没有其他js文件</p><p>原因：serve命令下，后面附加了入口参数 <code>./src/main.ts</code>, 然后 vue-cli的配置文件vue.config.js里面，包含了这样一个配置</p><div class="language-js"><pre><code><span class="token literal-property property">pages</span><span class="token operator">:</span> <span class="token punctuation">{</span> <span class="token literal-property property">index</span><span class="token operator">:</span> <span class="token string">&#39;./src/main.ts&#39;</span> <span class="token punctuation">}</span>
+
+<span class="token comment">// 如果有入口参数，webpack配置的entry是这样</span>
+<span class="token literal-property property">entry</span><span class="token operator">:</span> <span class="token punctuation">{</span> <span class="token literal-property property">app</span><span class="token operator">:</span> <span class="token string">&#39;./src/main.ts&#39;</span> <span class="token punctuation">}</span>
+</code></pre></div><p>在HtmlWebpackPlugin中有一个参数<code>chunks</code>, 它表示chunk的白名单，只有在白名单里面的chunk，才会最终inject到html文件中，对应当前场景，就是因为错误的chunks配置，导致入口chunk js文件没有在白名单中</p><p>解决方案：去掉serve后面的入口参数 或者 把pages配置改成 <code>{ app: &#39;./src/main.ts&#39; }</code></p></div></div></main></div></div>
+    <script>__VP_HASH_MAP__ = JSON.parse("{\"index.md\":\"8b967e31\",\"nodejs_memory.md\":\"2e550f1a\",\"probolem.md\":\"95b5e4c1\",\"vite.md\":\"a0f05bd4\",\"webpack.md\":\"86efa1c4\"}")</script>
+    <script type="module" async src="/assets/app.adfffae8.js"></script>
+    
+  </body>
+</html>
