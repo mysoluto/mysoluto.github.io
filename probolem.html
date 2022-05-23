@@ -7,7 +7,7 @@
     <meta name="description" content="A VitePress site">
     <link rel="stylesheet" href="/assets/style.b83f43f5.css">
     <link rel="modulepreload" href="/assets/app.adfffae8.js">
-    <link rel="modulepreload" href="/assets/probolem.md.95b5e4c1.lean.js">
+    <link rel="modulepreload" href="/assets/probolem.md.af408a9b.lean.js">
     
     <meta name="twitter:title" content="日常开发遇到的问题 | soluto">
   <meta property="og:title" content="日常开发遇到的问题 | soluto">
@@ -17,8 +17,8 @@
 
 <span class="token comment">// 如果有入口参数，webpack配置的entry是这样</span>
 <span class="token literal-property property">entry</span><span class="token operator">:</span> <span class="token punctuation">{</span> <span class="token literal-property property">app</span><span class="token operator">:</span> <span class="token string">&#39;./src/main.ts&#39;</span> <span class="token punctuation">}</span>
-</code></pre></div><p>在HtmlWebpackPlugin中有一个参数<code>chunks</code>, 它表示chunk的白名单，只有在白名单里面的chunk，才会最终inject到html文件中，对应当前场景，就是因为错误的chunks配置，导致入口chunk js文件没有在白名单中</p><p>解决方案：去掉serve后面的入口参数 或者 把pages配置改成 <code>{ app: &#39;./src/main.ts&#39; }</code></p></div></div></main></div></div>
-    <script>__VP_HASH_MAP__ = JSON.parse("{\"index.md\":\"8b967e31\",\"nodejs_memory.md\":\"2e550f1a\",\"probolem.md\":\"95b5e4c1\",\"vite.md\":\"a0f05bd4\",\"webpack.md\":\"86efa1c4\"}")</script>
+</code></pre></div><p>在<a href="https://github.com/jantimon/html-webpack-plugin#options" target="_blank" rel="noopener noreferrer">HtmlWebpackPlugin</a>中有一个参数<code>chunks</code>, 它表示chunk的白名单，只有在白名单里面的chunk，才会最终inject到html文件中，对应当前场景，就是因为错误的chunks配置，导致入口chunk js文件没有在白名单中</p><p>解决方案：去掉serve后面的入口参数 或者 把pages配置改成 <code>{ app: &#39;./src/main.ts&#39; }</code></p></div></div></main></div></div>
+    <script>__VP_HASH_MAP__ = JSON.parse("{\"index.md\":\"8b967e31\",\"nodejs_memory.md\":\"2e550f1a\",\"probolem.md\":\"af408a9b\",\"vite.md\":\"a0f05bd4\",\"webpack.md\":\"86efa1c4\"}")</script>
     <script type="module" async src="/assets/app.adfffae8.js"></script>
     
   </body>
