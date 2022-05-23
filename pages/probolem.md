@@ -15,6 +15,6 @@ pages: { index: './src/main.ts' }
 // 如果有入口参数，webpack配置的entry是这样
 entry: { app: './src/main.ts' }
 ```
-在HtmlWebpackPlugin中有一个参数`chunks`, 它表示chunk的白名单，只有在白名单里面的chunk，才会最终inject到html文件中，对应当前场景，就是因为错误的chunks配置，导致入口chunk js文件没有在白名单中
+在[HtmlWebpackPlugin](https://github.com/jantimon/html-webpack-plugin#options)中有一个参数`chunks`, 它表示chunk的白名单，只有在白名单里面的chunk，才会最终inject到html文件中，对应当前场景，就是因为错误的chunks配置，导致入口chunk js文件没有在白名单中
 
 解决方案：去掉serve后面的入口参数 或者 把pages配置改成 `{ app: './src/main.ts' }`
