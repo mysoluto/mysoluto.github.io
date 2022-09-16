@@ -26,8 +26,8 @@ parser提供了比较多的hook用于处理 ast解析环节的狗子
 1. factory.create方法中，执行resolve解析步骤，并生成module实例，大部分是NomralModule实例
 2. 调用module实例的build方法
 3. 在module build执行过程中，运行loaders，返回 source 文本，接着生成ast文件
-4、解析ast文件后，module的dependencies包含很多dependency实例
-5、遍历moduel.dependencies, 找到对应的factory, 然后执行上述步骤1，循环
+4. 解析ast文件后，module的dependencies包含很多dependency实例
+5. 遍历moduel.dependencies, 找到对应的factory, 然后执行上述步骤1，循环
 
 如下是在一个项目中断点打出的factory 和dependency类型的映射
 

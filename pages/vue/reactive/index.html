@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>Reactive</h2>
+    <hr />
+    <script type="module">
+        import { effect } from './effect.js'
+
+        import { reactive } from './reactive.js'
+
+        const render = () => {
+            console.log(data.h1)        
+
+            effect(() => {
+                console.log(data.h2)
+            })      
+
+            // 这个时候 activeEffectFn 是null的
+            console.log(data.h3)
+        }
+
+        const data = reactive({ h1: 'hello, world', h2: 'hello, h2', h3: 'hello, h3' })
+        window.data = data
+        effect(render)
+
+        // window.data2 = reactive({ ok: false, h1: 'hello, h1' })
+        // effect(() => console.log(window.data2.ok ? window.data2.h1 : 'default h1'))
+
+        // window.data3 = reactive({ count: 1 })
+        // effect(() => {
+        //     console.log(window.data3.count)
+        //     window.data3.count = 2
+        // })
+    </script>
+</body>
+</html>
