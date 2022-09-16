@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>vue 响应式 | soluto</title>
+    <meta name="description" content="A VitePress site">
+    <link rel="stylesheet" href="/assets/style.c78bc0a3.css">
+    <link rel="modulepreload" href="/assets/app.adfffae8.js">
+    <link rel="modulepreload" href="/assets/vue_reactive_index.md.de39c8fc.lean.js">
+    
+    <meta name="twitter:title" content="vue 响应式 | soluto">
+  <meta property="og:title" content="vue 响应式 | soluto">
+  </head>
+  <body>
+    <div id="app"><div class="page"><header class="page-header"><h1>M.X</h1></header><main class="page-main"><div style="position:relative;"><div><h1 id="响应式" tabindex="-1">响应式 <a class="header-anchor" href="#响应式" aria-hidden="true">#</a></h1><p>响应式是描述解决 数据和UI渲染直接联系的一种直观方案，人们只需要设定好数据和UI的关系，后续更新数据，框架层面会确保UI得到正确渲染， 传统的方式是类似jquery的方式，直接操作dom, 这种方式成本高且可维护性相对差些，现代前端框架大部分是响应式的解决方案，响应式的一个基本流程是：</p><p>渲染函数（组件里面的render, 负责根据数据描述UI， 也可能是单纯的计算函数），依赖值（变量），收集 渲染函数和依赖值之间的关系并存储，后续检测到 依赖值的变化，就重新运行渲染函数，更新UI</p><p>这里主要参考“书籍” 描述vue响应式的大致实现，对应vue3里面的 @vue/reactivity</p><h2 id="如何收集依赖" tabindex="-1">如何收集依赖 <a class="header-anchor" href="#如何收集依赖" aria-hidden="true">#</a></h2><p>收集依赖，其实就是保存好 渲染函数和变量之间的依赖关系, 这里主要是去监听 变量的读取（使用）、设置（更新），vue2中是通过Object.defineProperty实现，比如</p><div class="language-js"><pre><code><span class="token keyword">const</span> originData <span class="token operator">=</span> <span class="token punctuation">{</span> <span class="token literal-property property">count</span><span class="token operator">:</span> <span class="token number">1</span> <span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">wrapper</span><span class="token punctuation">(</span><span class="token parameter">originData</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token comment">// Object.keys遍历</span>
+    Object<span class="token punctuation">.</span><span class="token function">keys</span><span class="token punctuation">(</span>originData<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">key</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        Object<span class="token punctuation">.</span><span class="token function">defineProperty</span><span class="token punctuation">(</span>data<span class="token punctuation">,</span> key<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+            <span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">&#39;read&#39;</span><span class="token punctuation">,</span> key<span class="token punctuation">)</span>
+                <span class="token keyword">return</span> originData<span class="token punctuation">[</span>key<span class="token punctuation">]</span>
+            <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token function">set</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+                console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">&#39;write&#39;</span><span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+                originData<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> value
+                <span class="token keyword">return</span> <span class="token boolean">true</span>
+            <span class="token punctuation">}</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">return</span> data
+<span class="token punctuation">}</span>
+
+<span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token function">wrapper</span><span class="token punctuation">(</span>originData<span class="token punctuation">)</span>
+
+<span class="token keyword">const</span> data2 <span class="token operator">=</span> <span class="token function">wrapper</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token literal-property property">name</span><span class="token operator">:</span> <span class="token string">&#39;hello&#39;</span><span class="token punctuation">,</span> <span class="token literal-property property">count</span><span class="token operator">:</span> <span class="token number">2</span> <span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre></div><p>新的方式是通过<code>Proxy</code>的方式，实现同样的效果可以这样</p><div class="language-js"><pre><code><span class="token keyword">function</span> <span class="token function">wrapper</span><span class="token punctuation">(</span><span class="token parameter">originData</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>originData<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">&#39;read&#39;</span><span class="token punctuation">,</span> key<span class="token punctuation">)</span>
+            <span class="token keyword">return</span> Reflect<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">)</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token function">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">&#39;write&#39;</span><span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+            <span class="token keyword">return</span> Reflect<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre></div><p>在了解了监听变量 读取 或 修改的方式之后，我们可以继续定义如下概念，之所以需要对fn进行包装处理，是因为JS是单线程顺序执行的，单个时间点最多只有一个函数在运行，因此可以通过这种方式，跟踪变量和 函数直接的关系，比如</p><p>fn: 渲染函数 或者 其它需要监听变量，然后rerun的函数 effect: 对 fn进行包装的工具函数，使用 <code>effect(fn)</code></p><div class="language-js"><pre><code><span class="token keyword">let</span> activeEffect
+
+<span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">{</span> <span class="token literal-property property">h1</span><span class="token operator">:</span> <span class="token string">&#39;hello, world&#39;</span><span class="token punctuation">,</span> <span class="token literal-property property">h2</span><span class="token operator">:</span> <span class="token string">&#39;hello, h2&#39;</span><span class="token punctuation">,</span> <span class="token literal-property property">h3</span><span class="token operator">:</span> <span class="token string">&#39;hello, h3&#39;</span> <span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    activeEffect <span class="token operator">=</span> fn
+    <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    activeEffect <span class="token operator">=</span> <span class="token keyword">null</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">const</span> <span class="token function-variable function">render</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span> console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span>h1<span class="token punctuation">)</span> <span class="token punctuation">}</span>
+
+<span class="token function">effect</span><span class="token punctuation">(</span>renderEffect<span class="token punctuation">)</span>
+
+</code></pre></div><p>上面的方式有一个缺陷，即如果 render有嵌套的</p><div class="language-js"><pre><code><span class="token keyword">const</span> <span class="token function-variable function">render</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span>h1<span class="token punctuation">)</span>
+
+    <span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span>h2<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+    <span class="token comment">// 这个时候 activeEffectFn 是null的</span>
+    console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span>h3<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre></div><p>改进方案是如下：(通过维护一个堆栈，跟踪effect执行的嵌套)</p><div class="language-js"><pre><code><span class="token keyword">let</span> activeEffect
+<span class="token keyword">const</span> effectStack <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+<span class="token keyword">const</span> <span class="token function-variable function">pushTarget</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token parameter">effect</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> effectStack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>effect<span class="token punctuation">)</span>
+
+<span class="token keyword">const</span> <span class="token function-variable function">popTarget</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+    effectStack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    activeEffect <span class="token operator">=</span> effectStack<span class="token punctuation">[</span>effectStack<span class="token punctuation">.</span>length<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token function-variable function">effectFn</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token function">pushTarget</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+
+        <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        <span class="token function">popTarget</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+
+    effectFn<span class="token punctuation">.</span>id <span class="token operator">=</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">effect</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>Date<span class="token punctuation">.</span><span class="token function">now</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token template-punctuation string">`</span></span>
+
+    <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre></div><p>当前我们已经包装了 fn 的运行上下文，确保fn运行的时候，activeEffect指向 当前fn的包装函数 effectFn, 接下来，我们需要对 data进行拦截，收集 data和 fn之间的联系，通过定义 track 和 trigger函数来处理这些逻辑</p><div class="language-js"><pre><code><span class="token comment">// 保存的结构参考vue的，这里暂时没有深入思考</span>
+<span class="token comment">// WeakMap = { &lt;target&gt;: Map(= { &lt;key&gt;: new Set&lt;effectFn&gt; } ) }</span>
+<span class="token keyword">const</span> depsMap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">WeakMap</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token keyword">function</span> <span class="token function">track</span><span class="token punctuation">(</span><span class="token parameter">target<span class="token punctuation">,</span> key</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">let</span> targetDep <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>targetDep<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        depsMap<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> targetDep <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Map</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">let</span> deps <span class="token operator">=</span> targetDep<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>deps<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        targetDep<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> deps <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Set</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+
+    activeEffect <span class="token operator">&amp;&amp;</span> deps<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>activeEffect<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">trigger</span><span class="token punctuation">(</span><span class="token parameter">target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> targetDep <span class="token operator">=</span> depsMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>targetDep<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">const</span> deps <span class="token operator">=</span> targetDep<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>deps<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">const</span> effectRun <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Set</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> effectFn <span class="token keyword">of</span> deps<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        effectFn <span class="token operator">!==</span> activeEffect <span class="token operator">&amp;&amp;</span> effectRun<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> effectFn <span class="token keyword">of</span> effectRun<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">effectFn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">reactive</span><span class="token punctuation">(</span><span class="token parameter">obj</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">Proxy</span><span class="token punctuation">(</span>obj<span class="token punctuation">,</span> <span class="token punctuation">{</span>
+        <span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token function">track</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">)</span>
+            <span class="token keyword">return</span> Reflect<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">)</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token function">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">const</span> result <span class="token operator">=</span> Reflect<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+            <span class="token function">trigger</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> key<span class="token punctuation">,</span> value<span class="token punctuation">)</span>
+            <span class="token keyword">return</span> value
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre></div><p>如上，当前有两个问题： 1、每次运行render的时候，嵌套的effect 运行会产生一个新的effectFn,并被保存到了deps中，此时改变 data.h2的值，会看到 打印了两个 （原因是deps中有两个effectFn, 包装的fn的逻辑是一致的 2、假如render函数里面的 逻辑是这样的，<code>console.log(data.ok ? data.h1 : &#39;default hello&#39;)</code>, 此时如果 data.ok开始是false, 则始终收集不到 data.h1这个依赖，就算后续设置data.ok = true， 此时改变data.h1, 同样不会触发 effectFn的运行</p><div class="language-js"><pre><code><span class="token keyword">const</span> data <span class="token operator">=</span> <span class="token punctuation">{</span> <span class="token literal-property property">ok</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span> <span class="token literal-property property">h1</span><span class="token operator">:</span> <span class="token string">&#39;hello, h1&#39;</span> <span class="token punctuation">}</span>
+
+<span class="token function">effect</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>data<span class="token punctuation">.</span>ok <span class="token operator">?</span> data<span class="token punctuation">.</span>h1 <span class="token operator">:</span> <span class="token string">&#39;default hello&#39;</span> <span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+</code></pre></div><p>问题2的解决方案：每次运行effectFn都先清除依赖，相当于重新走收集过程</p><div class="language-js"><pre><code><span class="token keyword">function</span> <span class="token function">cleanEffect</span><span class="token punctuation">(</span><span class="token parameter">effectFn</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    effectFn<span class="token punctuation">.</span>deps<span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token parameter">deps</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        deps<span class="token punctuation">.</span><span class="token function">delete</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+    <span class="token punctuation">}</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">function</span> <span class="token function">effect</span><span class="token punctuation">(</span><span class="token parameter">fn</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">const</span> <span class="token function-variable function">effectFn</span> <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=&gt;</span> <span class="token punctuation">{</span>
+        <span class="token function">cleanEffect</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        <span class="token function">pushTarget</span><span class="token punctuation">(</span>effectFn<span class="token punctuation">)</span>
+        <span class="token function">fn</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token function">popTarget</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// ...</span>
+<span class="token punctuation">}</span>
+</code></pre></div></div></div></main></div></div>
+    <script>__VP_HASH_MAP__ = JSON.parse("{\"index.md\":\"8b967e31\",\"nodejs_memory.md\":\"2e550f1a\",\"problem.md\":\"53c89487\",\"vite.md\":\"a0f05bd4\",\"vue_reactive_index.md\":\"de39c8fc\",\"webpack.md\":\"5299a562\"}")</script>
+    <script type="module" async src="/assets/app.adfffae8.js"></script>
+    
+  </body>
+</html>
